@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package parking;
+
+service ParkingService {
+  rpc ReportStatus(StatusRequest) returns (StatusResponse);
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+  rpc StreamStatus(StreamRequest) returns (stream StatusUpdate);
+}
+
+message StatusRequest {
+  string pi_id = 1;
+  double temperature = 2;
+  bool camera_ok = 3;
+  int64 uptime = 4;
+}
+
+message StatusResponse {
+  bool success = 1;
+  string message = 2;
+  repeated Alert alerts = 3;
+}
+
+message GetStatusRequest {
+  string pi_id = 1; // empty for all
+}
+
+message GetStatusResponse {
+  repeated PiStatus statuses = 1;
+}
+
+message StreamRequest {
+  string pi_id = 1; // empty for all
+}
+
+message StatusUpdate {
+  string pi_id = 1;
+  double temperature = 2;
+  bool camera_ok = 3;
+  bool is_online = 4;
+  int64 last_seen = 5;
+  repeated Alert alerts = 6;
+}
+
+message PiStatus {
+  string pi_id = 1;
+  double temperature = 2;
+  bool camera_ok = 3;
+  bool is_online = 4;
+  int64 last_seen = 5;
+  int64 uptime = 6;
+}
+
+message Alert {
+  string type = 1;
+  string message = 2;
+  string severity = 3;
+  int64 timestamp = 4;
+}
