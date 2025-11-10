@@ -2,7 +2,7 @@
 
 # Simple deployment script for Pi devices
 PI_ID=${1:-"blue-gate-pi"}
-SERVER_URL=${2:-"192.168.1.112:50051"}
+SERVER_URL=${2:-"http://192.168.1.112:3000"}
 
 echo "🚀 Deploying Parking Pulse Edge Service"
 echo "📍 Pi ID: $PI_ID"

@@ -68,8 +68,9 @@ if (!config.PI_ID || config.PI_ID === 'unknown-pi') {
   console.warn('⚠️  PI_ID not properly configured. Please set PI_ID environment variable or update config.js');
 }
 
-if (!config.SERVER_URL.startsWith('http')) {
+if (!config.SERVER_URL.startsWith('http://') && !config.SERVER_URL.startsWith('https://')) {
   console.error('❌ Invalid SERVER_URL. Must start with http:// or https://');
+  console.error(`   Current value: ${config.SERVER_URL}`);
   process.exit(1);
 }
 
