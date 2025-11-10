@@ -8,7 +8,7 @@ A lightweight HTTP-based monitoring service for Raspberry Pi devices that report
 ┌─────────────────┐    HTTP POST       ┌─────────────────┐
 │   Raspberry Pi  │ ──────────────────► │  Central Server │
 │                 │   (Port 3000)      │                 │
-│  • Temperature  │    Every 30s       │  • Data Storage │
+│  • Temperature  │    Every 10s       │  • Data Storage │
 │  • Camera       │    JSON Payload    │  • Alerts       │
 │  • System Status│                    │  • Dashboard    │
 └─────────────────┘                    └─────────────────┘
@@ -113,7 +113,7 @@ PI_ID=blue-gate-pi                      # Unique Pi identifier
 SERVER_URL=http://192.168.1.112:3000    # Central server HTTP endpoint
 
 # Optional
-INTERVAL=30000                          # Reporting interval (ms, default: 30000)
+INTERVAL=10000                          # Reporting interval (ms, default: 10000)
 HTTP_TIMEOUT=5000                       # HTTP request timeout (ms, default: 5000)
 NODE_ENV=production                     # Environment mode
 ```
@@ -212,7 +212,7 @@ curl -I http://192.168.1.112:3000/pi-status  # Test HTTP endpoint
 # Test sending data manually
 curl -X POST http://192.168.1.112:3000/pi-status \
   -H "Content-Type: application/json" \
-  -d '{"piId":"test","temperature":45.2,"cameraOk":true,"systemOnline":true,"uptime":100,"timestamp":1234567890}'
+  -d '{"piId":"test","temperatureC":45.2,"temperatureF":113.36,"cameraOk":true,"systemOnline":true,"uptime":100,"timestamp":1699876543210}'
 ```
 
 ### Common Issues & Solutions
@@ -275,11 +275,12 @@ The service sends the following JSON data via HTTP POST to `/pi-status`:
 ```javascript
 {
   piId: "blue-gate-pi",        // Unique Pi identifier
-  temperature: 45.2,           // CPU temperature in Celsius
-  cameraOk: true,             // Camera status (true/false)
-  systemOnline: true,         // System online status (always true when sending)
-  uptime: 86400,              // Seconds since service start
-  timestamp: 1699876543210    // Unix timestamp (milliseconds)
+  temperatureC: 45.2,          // CPU temperature in Celsius
+  temperatureF: 113.36,        // CPU temperature in Fahrenheit
+  cameraOk: true,              // Camera status (true/false)
+  systemOnline: true,          // System online status (always true when sending)
+  uptime: 86400,               // Seconds since service start
+  timestamp: 1699876543210     // Unix timestamp (milliseconds)
 }
 ```
 
@@ -300,10 +301,11 @@ The service sends the following JSON data via HTTP POST to `/pi-status`:
 ## 🎯 **Features**
 
 ### ✅ **Hardware Monitoring**
-- **CPU Temperature**: Real-time temperature via `vcgencmd`
+- **CPU Temperature**: Real-time temperature via `vcgencmd` (reported in both Celsius and Fahrenheit)
 - **Camera Status**: Detection and functionality testing
 - **System Status**: Online/offline tracking
 - **System Uptime**: Service runtime tracking
+- **Timestamp**: Unix timestamp with each report for accurate time tracking
 - **Mock Data**: Works on non-Pi systems for development
 
 ### ✅ **Communication**
@@ -311,8 +313,9 @@ The service sends the following JSON data via HTTP POST to `/pi-status`:
 - **Zero Dependencies**: Uses only Node.js built-in modules
 - **Timeout Handling**: Configurable HTTP request timeouts
 - **Error Handling**: Continues operation despite connection failures
-- **Configurable Intervals**: Adjustable reporting frequency (default: 30s)
+- **Configurable Intervals**: Adjustable reporting frequency (default: 10s)
 - **Alert Support**: Receives and displays server alerts
+- **Dual Temperature Format**: Sends both Celsius and Fahrenheit for international compatibility
 
 ### ✅ **Deployment**
 - **Systemd Integration**: Auto-start on boot
@@ -375,9 +378,10 @@ PI_ID=test-pi SERVER_URL=http://localhost:3000 INTERVAL=5000 node pi-monitor.js
 
 - **CPU Usage**: < 1% during normal operation
 - **Memory Usage**: ~10-15MB (reduced from gRPC version!)
-- **Network Usage**: ~200-300 bytes per report (JSON, every 30s)
+- **Network Usage**: ~200-300 bytes per report (JSON, every 10s)
 - **Disk I/O**: Minimal (only for camera tests)
 - **Startup Time**: Instant (no dependency loading)
+- **Reporting Frequency**: Every 10 seconds (configurable via INTERVAL env var)
 
 ## 🔒 **Security**
 
@@ -399,8 +403,8 @@ PI_ID=test-pi SERVER_URL=http://localhost:3000 INTERVAL=5000 node pi-monitor.js
 ---
 
 **Status**: ✅ **Production Ready**
-**Version**: 2.0.0 (HTTP Implementation)
+**Version**: 2.1.0 (HTTP Implementation with Dual Temperature Format)
 **Protocol**: HTTP/HTTPS (simple JSON communication)
 **Dependencies**: Zero external dependencies
 **Deployment**: Systemd service with auto-restart
-**Monitoring**: Real-time hardware status reporting
+**Monitoring**: Real-time hardware status reporting every 10 seconds

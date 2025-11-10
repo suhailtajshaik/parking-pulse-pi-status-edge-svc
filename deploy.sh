@@ -24,7 +24,7 @@ RestartSec=5
 User=pi
 Environment=PI_ID=$PI_ID
 Environment=SERVER_URL=$SERVER_URL
-Environment=INTERVAL=30000
+Environment=INTERVAL=10000
 WorkingDirectory=$(pwd)
 ExecStart=/usr/bin/node pi-monitor.js
 StandardOutput=journal

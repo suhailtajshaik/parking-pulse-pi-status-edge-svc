@@ -21,7 +21,7 @@ const config = {
   SERVER_URL: process.env.SERVER_URL || 'http://192.168.1.112:3000',
   
   // Monitoring Configuration
-  MONITORING_INTERVAL: parseInt(process.env.MONITORING_INTERVAL) || 30000, // 30 seconds
+  MONITORING_INTERVAL: parseInt(process.env.MONITORING_INTERVAL) || 10000, // 10 seconds
   
   // System Commands (Raspberry Pi specific)
   TEMP_COMMAND: '/usr/bin/vcgencmd measure_temp',

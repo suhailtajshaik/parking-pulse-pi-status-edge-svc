@@ -5,8 +5,13 @@ const https = require('https');
 // Configuration
 const PI_ID = process.env.PI_ID || 'blue-gate-pi';
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
-const INTERVAL = parseInt(process.env.INTERVAL) || 30000;
+const INTERVAL = parseInt(process.env.INTERVAL) || 10000; // Default: 10 seconds
 const HTTP_TIMEOUT = parseInt(process.env.HTTP_TIMEOUT) || 5000;
+
+// Helper function to convert Celsius to Fahrenheit
+function celsiusToFahrenheit(celsius) {
+  return (celsius * 9/5) + 32;
+}
 
 // Parse server URL
 function parseServerUrl(url) {
@@ -68,10 +73,13 @@ class SimplePiMonitor {
       ]);
 
       const uptime = Math.floor((Date.now() - this.startTime) / 1000);
+      const tempCelsius = parseFloat(temperature.toFixed(2));
+      const tempFahrenheit = parseFloat(celsiusToFahrenheit(temperature).toFixed(2));
 
       const payload = {
         piId: this.piId,
-        temperature: parseFloat(temperature.toFixed(2)),
+        temperatureC: tempCelsius,
+        temperatureF: tempFahrenheit,
         cameraOk: cameraOk,
         systemOnline: true,
         uptime: uptime,
@@ -96,7 +104,7 @@ class SimplePiMonitor {
       };
 
       console.log(`📤 Sending HTTP request to ${serverConfig.protocol}//${serverConfig.hostname}:${serverConfig.port}${serverConfig.path}`);
-      console.log(`   Data: ${this.piId} | ${temperature.toFixed(1)}°C | Camera: ${cameraOk ? '✅' : '❌'} | Uptime: ${uptime}s`);
+      console.log(`   Data: ${this.piId} | ${tempCelsius}°C (${tempFahrenheit}°F) | Camera: ${cameraOk ? '✅' : '❌'} | Uptime: ${uptime}s`);
 
       const req = httpModule.request(options, (res) => {
         let responseData = '';
