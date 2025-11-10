@@ -14,6 +14,68 @@ A lightweight HTTP-based monitoring service for Raspberry Pi devices that report
 └─────────────────┘                    └─────────────────┘
 ```
 
+## 📋 **Prerequisites & Initial Setup**
+
+### For Fresh Raspbian OS Installation
+
+If you're setting up this service on a **fresh Raspbian OS installation**, use the automated initialization script to install all prerequisites:
+
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd parking-pulse-pi-status-edge-svc
+
+# 2. Run the initialization script
+chmod +x init.sh
+./init.sh
+```
+
+**The init script will automatically install:**
+- ✅ Node.js (v20 LTS) via NVM (Node Version Manager)
+- ✅ Camera libraries (`libcamera-dev`, `libcamera-apps`, `rpicam-apps`)
+- ✅ System dependencies (`curl`, `wget`, `git`, `build-essential`)
+- ✅ Camera permissions and configuration
+- ✅ All required system packages
+
+**Interactive Installation:**
+- The script will prompt for confirmation before proceeding
+- It detects if running on actual Raspberry Pi hardware
+- Configures camera permissions (adds user to video group)
+- Provides option to reboot after installation
+- Shows verification of all installed components
+
+**After Installation:**
+You may need to reboot for camera permissions to take effect:
+```bash
+sudo reboot
+```
+
+**For Non-Pi Systems (Development):**
+The init script works on non-Raspberry Pi systems too, but skips camera-specific configuration. This is useful for development and testing.
+
+### For Systems with Existing Node.js
+
+If you already have Node.js installed:
+```bash
+# Just install camera packages (Raspberry Pi only)
+sudo apt-get update
+sudo apt-get install -y libcamera-dev libcamera-apps libcamera-tools rpicam-apps
+
+# Add user to video group for camera access
+sudo usermod -a -G video $(whoami)
+
+# Reboot for permissions to take effect
+sudo reboot
+```
+
+### Minimum Requirements
+- **OS**: Raspbian OS (Bullseye or newer) or Raspberry Pi OS
+- **Hardware**: Raspberry Pi 3, 4, or 5 (recommended: Pi 4 or Pi 5)
+- **Node.js**: v14.0.0 or higher (v20 LTS recommended, installed by init.sh)
+- **Camera**: Raspberry Pi Camera Module (optional but recommended)
+- **Network**: Ethernet or WiFi connection to central server
+- **Storage**: Minimal (< 50MB for service + Node.js)
+
 ## 🚀 **Quick Start**
 
 ### 1. Install Dependencies
@@ -364,8 +426,9 @@ The service sends the following JSON data via HTTP POST to `/pi-status`:
 
 ```
 parking-pulse-pi-status-edge-svc/
-├── pi-monitor.js           # Main monitoring service (~185 lines)
+├── pi-monitor.js           # Main monitoring service (~280 lines)
 ├── config.js              # Configuration module (91 lines)
+├── init.sh                # Initialization script for fresh Raspbian setup (~300 lines)
 ├── deploy.sh              # Generic deployment script
 ├── deploy-blue-gate.sh    # Blue gate deployment script
 ├── deploy-pink-gate.sh    # Pink gate deployment script
@@ -373,7 +436,7 @@ parking-pulse-pi-status-edge-svc/
 └── README.md             # This file
 ```
 
-**Total Code**: ~275 lines of production-ready code with zero external dependencies!
+**Total Code**: ~670 lines of production-ready code with zero external dependencies!
 
 ## 🚨 **Alert Triggers**
 
@@ -431,17 +494,19 @@ PI_ID=test-pi SERVER_URL=http://localhost:3000 INTERVAL=5000 node pi-monitor.js
 
 ## 🎯 **Next Steps**
 
-1. **Deploy to Production**: Use deployment script on actual Pi devices
-2. **Monitor Dashboard**: Check central server dashboard for data
-3. **Customize Alerts**: Adjust temperature thresholds as needed
-4. **Scale Up**: Add more Pi devices with unique IDs
+1. **Fresh Installation**: Run `./init.sh` on new Raspberry Pi devices to install all prerequisites
+2. **Deploy to Production**: Use deployment script on actual Pi devices (`./deploy.sh` or device-specific scripts)
+3. **Monitor Dashboard**: Check central server dashboard for data
+4. **Customize Alerts**: Adjust temperature thresholds as needed
+5. **Scale Up**: Add more Pi devices with unique IDs
 
 ---
 
 **Status**: ✅ **Production Ready**
-**Version**: 2.2.0 (HTTP Implementation with Dual Temperature Format & Server Health Check)
+**Version**: 2.3.0 (HTTP Implementation with Dual Temperature Format, Server Health Check & Automated Setup)
 **Protocol**: HTTP/HTTPS (simple JSON communication)
 **Dependencies**: Zero external dependencies
 **Deployment**: Systemd service with auto-restart
+**Setup**: Automated initialization script for fresh Raspbian installations
 **Monitoring**: Real-time hardware status reporting every 10 seconds
 **Reliability**: Server health check on startup with automatic retry logic
