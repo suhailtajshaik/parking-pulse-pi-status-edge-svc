@@ -1,7 +1,7 @@
 {
   "name": "parking-pulse-edge-service",
-  "version": "2.2.0",
-  "description": "Lightweight HTTP-based monitoring service for Raspberry Pi devices that reports system health metrics (temperature in C/F, camera status, uptime) to a central server every 10 seconds with automatic server health checks",
+  "version": "2.3.0",
+  "description": "Lightweight HTTP-based monitoring service for Raspberry Pi devices that reports system health metrics (temperature in C/F, camera status, uptime) to a central server every 10 seconds with automatic server health checks and automated setup script",
   "main": "pi-monitor.js",
   "scripts": {
     "start": "node pi-monitor.js",
