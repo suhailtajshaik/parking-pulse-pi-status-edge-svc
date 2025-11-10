@@ -95,8 +95,21 @@ sudo systemctl restart parking-pulse
 # Check service status
 sudo systemctl status parking-pulse
 
-# View live logs
+# View live logs (you should see startup health check)
 sudo journalctl -u parking-pulse -f
+
+# Expected startup logs:
+# ═══════════════════════════════════════════════════════════
+#   Parking Pulse Edge Service - Starting...
+# ═══════════════════════════════════════════════════════════
+#
+# 🔍 Checking server health: http://192.168.1.112:3000
+# ✅ Server is reachable (attempt 1/3)
+#
+# 🚀 Starting blue-gate-pi monitor
+#    Reporting to: http://192.168.1.112:3000/pi-status
+#    Interval: 10000ms (10s)
+#    Timeout: 5000ms
 
 # Test connection manually
 curl -X POST http://192.168.1.112:3000/pi-status \
@@ -115,6 +128,8 @@ SERVER_URL=http://192.168.1.112:3000    # Central server HTTP endpoint
 # Optional
 INTERVAL=10000                          # Reporting interval (ms, default: 10000)
 HTTP_TIMEOUT=5000                       # HTTP request timeout (ms, default: 5000)
+HEALTH_CHECK_RETRIES=3                  # Server health check retries (default: 3)
+HEALTH_CHECK_DELAY=2000                 # Delay between health check retries (ms, default: 2000)
 NODE_ENV=production                     # Environment mode
 ```
 
@@ -268,6 +283,25 @@ node --version
 npm --version
 ```
 
+#### 5. **Server Health Check Failing**
+```bash
+# The service performs a health check on startup
+# If server is unreachable, you'll see:
+# ⚠️  Server unreachable (attempt 1/3), retrying in 2000ms...
+# ⚠️  WARNING: Server is unreachable after 3 attempts
+
+# This is OK - the service will still start and retry every 10s
+
+# To customize health check behavior:
+HEALTH_CHECK_RETRIES=5 HEALTH_CHECK_DELAY=3000 node pi-monitor.js
+
+# To skip health check (not recommended):
+HEALTH_CHECK_RETRIES=0 node pi-monitor.js
+
+# Verify server is actually running:
+curl -I http://192.168.1.112:3000/pi-status
+```
+
 ## 📊 **Data Format**
 
 The service sends the following JSON data via HTTP POST to `/pi-status`:
@@ -311,11 +345,13 @@ The service sends the following JSON data via HTTP POST to `/pi-status`:
 ### ✅ **Communication**
 - **HTTP/HTTPS Protocol**: Simple, universal JSON-based communication
 - **Zero Dependencies**: Uses only Node.js built-in modules
+- **Server Health Check**: Verifies server connectivity before starting (with retry logic)
 - **Timeout Handling**: Configurable HTTP request timeouts
 - **Error Handling**: Continues operation despite connection failures
 - **Configurable Intervals**: Adjustable reporting frequency (default: 10s)
 - **Alert Support**: Receives and displays server alerts
 - **Dual Temperature Format**: Sends both Celsius and Fahrenheit for international compatibility
+- **Resilient Design**: Starts even if server is unreachable (will retry on interval)
 
 ### ✅ **Deployment**
 - **Systemd Integration**: Auto-start on boot
@@ -403,8 +439,9 @@ PI_ID=test-pi SERVER_URL=http://localhost:3000 INTERVAL=5000 node pi-monitor.js
 ---
 
 **Status**: ✅ **Production Ready**
-**Version**: 2.1.0 (HTTP Implementation with Dual Temperature Format)
+**Version**: 2.2.0 (HTTP Implementation with Dual Temperature Format & Server Health Check)
 **Protocol**: HTTP/HTTPS (simple JSON communication)
 **Dependencies**: Zero external dependencies
 **Deployment**: Systemd service with auto-restart
 **Monitoring**: Real-time hardware status reporting every 10 seconds
+**Reliability**: Server health check on startup with automatic retry logic

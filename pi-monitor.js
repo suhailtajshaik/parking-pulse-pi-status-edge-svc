@@ -7,10 +7,17 @@ const PI_ID = process.env.PI_ID || 'blue-gate-pi';
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
 const INTERVAL = parseInt(process.env.INTERVAL) || 10000; // Default: 10 seconds
 const HTTP_TIMEOUT = parseInt(process.env.HTTP_TIMEOUT) || 5000;
+const HEALTH_CHECK_RETRIES = parseInt(process.env.HEALTH_CHECK_RETRIES) || 3;
+const HEALTH_CHECK_DELAY = parseInt(process.env.HEALTH_CHECK_DELAY) || 2000;
 
 // Helper function to convert Celsius to Fahrenheit
 function celsiusToFahrenheit(celsius) {
   return (celsius * 9/5) + 32;
+}
+
+// Helper function to sleep
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Parse server URL
@@ -27,6 +34,67 @@ function parseServerUrl(url) {
     console.error('❌ Invalid SERVER_URL format. Use http://hostname:port or https://hostname:port');
     process.exit(1);
   }
+}
+
+// Check if central server is reachable
+async function checkServerHealth(retries = HEALTH_CHECK_RETRIES) {
+  const serverConfig = parseServerUrl(SERVER_URL);
+  const httpModule = serverConfig.protocol === 'https:' ? https : http;
+
+  console.log(`🔍 Checking server health: ${serverConfig.protocol}//${serverConfig.hostname}:${serverConfig.port}`);
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const isReachable = await new Promise((resolve) => {
+        const options = {
+          hostname: serverConfig.hostname,
+          port: serverConfig.port,
+          path: serverConfig.path,
+          method: 'HEAD', // Use HEAD for lightweight health check
+          timeout: HTTP_TIMEOUT,
+          headers: {
+            'User-Agent': `PiMonitor/${PI_ID}`
+          }
+        };
+
+        const req = httpModule.request(options, (res) => {
+          // Any response means server is reachable (even 404)
+          resolve(true);
+        });
+
+        req.on('error', () => {
+          resolve(false);
+        });
+
+        req.on('timeout', () => {
+          req.destroy();
+          resolve(false);
+        });
+
+        req.end();
+      });
+
+      if (isReachable) {
+        console.log(`✅ Server is reachable (attempt ${attempt}/${retries})`);
+        return true;
+      }
+
+      if (attempt < retries) {
+        const delay = HEALTH_CHECK_DELAY * attempt; // Exponential backoff
+        console.log(`⚠️  Server unreachable (attempt ${attempt}/${retries}), retrying in ${delay}ms...`);
+        await sleep(delay);
+      }
+    } catch (error) {
+      console.error(`❌ Health check error (attempt ${attempt}/${retries}):`, error.message);
+      if (attempt < retries) {
+        await sleep(HEALTH_CHECK_DELAY * attempt);
+      }
+    }
+  }
+
+  console.warn(`⚠️  WARNING: Server is unreachable after ${retries} attempts`);
+  console.warn(`   Starting service anyway - will attempt to send data every ${INTERVAL / 1000}s`);
+  return false;
 }
 
 class SimplePiMonitor {
@@ -170,24 +238,42 @@ class SimplePiMonitor {
   }
 }
 
-// Start monitoring
-const monitor = new SimplePiMonitor(PI_ID);
-const interval = monitor.start();
+// Main startup function
+async function main() {
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log('  Parking Pulse Edge Service - Starting...');
+  console.log('═══════════════════════════════════════════════════════════\n');
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('\n🛑 Shutting down gracefully...');
-  clearInterval(interval);
-  console.log('✅ Monitor stopped');
-  process.exit(0);
-});
+  // Perform server health check
+  await checkServerHealth();
 
-// Handle uncaught errors
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught exception:', error.message);
-  console.error('   Stack:', error.stack);
-});
+  console.log(''); // Empty line for readability
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled rejection at:', promise, 'reason:', reason);
+  // Start monitoring
+  const monitor = new SimplePiMonitor(PI_ID);
+  const interval = monitor.start();
+
+  // Graceful shutdown
+  process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    clearInterval(interval);
+    console.log('✅ Monitor stopped');
+    process.exit(0);
+  });
+
+  // Handle uncaught errors
+  process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught exception:', error.message);
+    console.error('   Stack:', error.stack);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled rejection at:', promise, 'reason:', reason);
+  });
+}
+
+// Start the service
+main().catch((error) => {
+  console.error('❌ Failed to start service:', error.message);
+  process.exit(1);
 });

@@ -34,19 +34,21 @@ const config = {
   
   // HTTP Configuration
   HTTP_TIMEOUT: 5000, // 5 seconds
-  
+
   // Retry Configuration
   MAX_RETRIES: 3,
   RETRY_DELAY: 2000, // 2 seconds
-  
+
   // Logging Configuration
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
-  
+
   // Alert Thresholds (local monitoring)
   TEMP_WARNING_THRESHOLD: 65, // Celsius
   TEMP_CRITICAL_THRESHOLD: 75, // Celsius
-  
-  // Health Check Configuration
+
+  // Health Check Configuration (startup check before monitoring begins)
+  HEALTH_CHECK_RETRIES: parseInt(process.env.HEALTH_CHECK_RETRIES) || 3,
+  HEALTH_CHECK_DELAY: parseInt(process.env.HEALTH_CHECK_DELAY) || 2000, // 2 seconds
   HEALTH_CHECK_INTERVAL: 60000, // 1 minute
   
   // Pi-specific Configuration
