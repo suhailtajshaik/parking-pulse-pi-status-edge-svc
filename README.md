@@ -1,16 +1,16 @@
 # 🚗 Parking Pulse Edge Service (Raspberry Pi)
 
-A lightweight gRPC-based monitoring service for Raspberry Pi devices that reports system health metrics to a central server.
+A lightweight HTTP-based monitoring service for Raspberry Pi devices that reports system health metrics to a central server.
 
 ## 📊 **System Overview**
 
 ```
-┌─────────────────┐    gRPC (50051)    ┌─────────────────┐
+┌─────────────────┐    HTTP POST       ┌─────────────────┐
 │   Raspberry Pi  │ ──────────────────► │  Central Server │
-│                 │                    │                 │
-│  • Temperature  │    Every 30s       │  • Data Storage │
-│  • Camera       │                    │  • Alerts       │
-│  • Uptime       │                    │  • Dashboard    │
+│                 │   (Port 3000)      │                 │
+│  • Temperature  │    Every 10s       │  • Data Storage │
+│  • Camera       │    JSON Payload    │  • Alerts       │
+│  • System Status│                    │  • Dashboard    │
 └─────────────────┘                    └─────────────────┘
 ```
 
@@ -19,21 +19,26 @@ A lightweight gRPC-based monitoring service for Raspberry Pi devices that report
 ### 1. Install Dependencies
 ```bash
 cd parking-pulse-pi-status-edge-svc
-npm install
+npm install  # No external dependencies, but updates package-lock.json
 ```
+
+**Note:** This service uses only Node.js built-in modules (`http`, `https`, `child_process`), so no external dependencies are required!
 
 ### 2. Run the Service
 
 #### Development Mode (Manual Testing)
 ```bash
 # Basic run with default settings
-PI_ID=blue-gate-pi SERVER_URL=192.168.1.112:50051 node pi-monitor.js
+PI_ID=blue-gate-pi SERVER_URL=http://192.168.1.112:3000 node pi-monitor.js
 
 # Run with custom settings
-PI_ID=pink-gate-pi SERVER_URL=192.168.1.112:50051 INTERVAL=30000 node pi-monitor.js
+PI_ID=pink-gate-pi SERVER_URL=http://192.168.1.112:3000 INTERVAL=30000 node pi-monitor.js
+
+# Run with HTTPS
+PI_ID=blue-gate-pi SERVER_URL=https://myserver.com:3000 node pi-monitor.js
 
 # Run in background for testing
-PI_ID=blue-gate-pi SERVER_URL=192.168.1.112:50051 node pi-monitor.js &
+PI_ID=blue-gate-pi SERVER_URL=http://192.168.1.112:3000 node pi-monitor.js &
 
 # Stop background process
 # Find process: ps aux | grep pi-monitor
@@ -44,13 +49,16 @@ PI_ID=blue-gate-pi SERVER_URL=192.168.1.112:50051 node pi-monitor.js &
 #### Production Mode (System Service)
 ```bash
 # Deploy Blue Gate Pi
-./deploy.sh blue-gate-pi 192.168.1.112:50051
+./deploy.sh blue-gate-pi http://192.168.1.112:3000
 
 # Deploy Pink Gate Pi
-./deploy.sh pink-gate-pi 192.168.1.112:50051
+./deploy.sh pink-gate-pi http://192.168.1.112:3000
+
+# Or use device-specific scripts
+./deploy-blue-gate.sh
+./deploy-pink-gate.sh
 
 # The deployment script will:
-# - Install dependencies
 # - Create systemd service
 # - Enable auto-start on boot
 # - Start the service immediately
@@ -87,8 +95,21 @@ sudo systemctl restart parking-pulse
 # Check service status
 sudo systemctl status parking-pulse
 
-# View live logs
+# View live logs (you should see startup health check)
 sudo journalctl -u parking-pulse -f
+
+# Expected startup logs:
+# ═══════════════════════════════════════════════════════════
+#   Parking Pulse Edge Service - Starting...
+# ═══════════════════════════════════════════════════════════
+#
+# 🔍 Checking server health: http://192.168.1.112:3000
+# ✅ Server is reachable (attempt 1/3)
+#
+# 🚀 Starting blue-gate-pi monitor
+#    Reporting to: http://192.168.1.112:3000/pi-status
+#    Interval: 10000ms (10s)
+#    Timeout: 5000ms
 
 # Test connection manually
 curl -X POST http://192.168.1.112:3000/pi-status \
@@ -101,12 +122,15 @@ curl -X POST http://192.168.1.112:3000/pi-status \
 ### Environment Variables
 ```bash
 # Required
-PI_ID=blue-gate-pi              # Unique Pi identifier
-SERVER_URL=192.168.1.112:50051  # Central server gRPC endpoint
+PI_ID=blue-gate-pi                      # Unique Pi identifier
+SERVER_URL=http://192.168.1.112:3000    # Central server HTTP endpoint
 
 # Optional
-INTERVAL=30000                  # Reporting interval (ms)
-NODE_ENV=production            # Environment mode
+INTERVAL=10000                          # Reporting interval (ms, default: 10000)
+HTTP_TIMEOUT=5000                       # HTTP request timeout (ms, default: 5000)
+HEALTH_CHECK_RETRIES=3                  # Server health check retries (default: 3)
+HEALTH_CHECK_DELAY=2000                 # Delay between health check retries (ms, default: 2000)
+NODE_ENV=production                     # Environment mode
 ```
 
 ### Supported Pi IDs
@@ -118,15 +142,18 @@ NODE_ENV=production            # Environment mode
 
 ### Development & Testing
 ```bash
-# Run with debug output
-PI_ID=blue-gate-pi SERVER_URL=localhost:50051 INTERVAL=10000 node pi-monitor.js
+# Run with debug output and shorter interval
+PI_ID=blue-gate-pi SERVER_URL=http://localhost:3000 INTERVAL=10000 node pi-monitor.js
 
 # Test different configurations
-PI_ID=test-pi SERVER_URL=192.168.1.112:50051 node pi-monitor.js
+PI_ID=test-pi SERVER_URL=http://192.168.1.112:3000 node pi-monitor.js
+
+# Test with HTTPS
+PI_ID=test-pi SERVER_URL=https://myserver.com:3000 node pi-monitor.js
 
 # Run multiple instances (testing)
-PI_ID=blue-gate-pi SERVER_URL=localhost:50051 node pi-monitor.js &
-PI_ID=pink-gate-pi SERVER_URL=localhost:50051 node pi-monitor.js &
+PI_ID=blue-gate-pi SERVER_URL=http://localhost:3000 node pi-monitor.js &
+PI_ID=pink-gate-pi SERVER_URL=http://localhost:3000 node pi-monitor.js &
 ```
 
 ### Production Service Management
@@ -174,15 +201,14 @@ sudo journalctl -u parking-pulse -n 50
 ### Deployment Commands
 ```bash
 # Initial deployment
-./deploy.sh blue-gate-pi 192.168.1.112:50051
+./deploy.sh blue-gate-pi http://192.168.1.112:3000
 
 # Update deployment (after code changes)
 git pull
-npm install
 sudo systemctl restart parking-pulse
 
 # Redeploy with new configuration
-./deploy.sh blue-gate-pi 192.168.1.100:50051  # New server IP
+./deploy.sh blue-gate-pi http://192.168.1.100:3000  # New server IP
 ```
 
 ## 🔍 **Monitoring & Troubleshooting**
@@ -196,20 +222,29 @@ rpicam-still -o test.jpg      # Test camera capture
 
 # Check network connectivity
 ping 192.168.1.112            # Ping central server
-telnet 192.168.1.112 50051    # Test gRPC port
+curl -I http://192.168.1.112:3000/pi-status  # Test HTTP endpoint
+
+# Test sending data manually
+curl -X POST http://192.168.1.112:3000/pi-status \
+  -H "Content-Type: application/json" \
+  -d '{"piId":"test","temperatureC":45.2,"temperatureF":113.36,"cameraOk":true,"systemOnline":true,"uptime":100,"timestamp":1699876543210}'
 ```
 
 ### Common Issues & Solutions
 
-#### 1. **gRPC Connection Failed**
+#### 1. **HTTP Connection Failed**
 ```bash
 # Check server accessibility
 ping 192.168.1.112
-telnet 192.168.1.112 50051
+curl -I http://192.168.1.112:3000/pi-status
 
 # Verify server URL format
-SERVER_URL=192.168.1.112:50051  # Correct
-SERVER_URL=http://192.168.1.112:50051  # Wrong (no http://)
+SERVER_URL=http://192.168.1.112:3000     # Correct
+SERVER_URL=https://192.168.1.112:3000    # Correct (for HTTPS)
+SERVER_URL=192.168.1.112:3000            # Wrong (missing protocol)
+
+# Check firewall rules
+sudo ufw status                          # Check if firewall is blocking
 ```
 
 #### 2. **Temperature Sensor Not Available**
@@ -248,49 +283,97 @@ node --version
 npm --version
 ```
 
+#### 5. **Server Health Check Failing**
+```bash
+# The service performs a health check on startup
+# If server is unreachable, you'll see:
+# ⚠️  Server unreachable (attempt 1/3), retrying in 2000ms...
+# ⚠️  WARNING: Server is unreachable after 3 attempts
+
+# This is OK - the service will still start and retry every 10s
+
+# To customize health check behavior:
+HEALTH_CHECK_RETRIES=5 HEALTH_CHECK_DELAY=3000 node pi-monitor.js
+
+# To skip health check (not recommended):
+HEALTH_CHECK_RETRIES=0 node pi-monitor.js
+
+# Verify server is actually running:
+curl -I http://192.168.1.112:3000/pi-status
+```
+
 ## 📊 **Data Format**
 
-The service sends the following data via gRPC:
+The service sends the following JSON data via HTTP POST to `/pi-status`:
 
 ```javascript
 {
-  piId: "blue-gate-pi",
-  temperature: 45.2,        // Celsius
-  cameraOk: true,          // Camera functional
-  uptime: 86400            // Seconds since service start
+  piId: "blue-gate-pi",        // Unique Pi identifier
+  temperatureC: 45.2,          // CPU temperature in Celsius
+  temperatureF: 113.36,        // CPU temperature in Fahrenheit
+  cameraOk: true,              // Camera status (true/false)
+  systemOnline: true,          // System online status (always true when sending)
+  uptime: 86400,               // Seconds since service start
+  timestamp: 1699876543210     // Unix timestamp (milliseconds)
+}
+```
+
+**Server Response Format:**
+```javascript
+{
+  success: true,
+  message: "Status received",
+  alerts: [                   // Optional array of alerts
+    {
+      message: "High temperature detected",
+      severity: "warning"
+    }
+  ]
 }
 ```
 
 ## 🎯 **Features**
 
 ### ✅ **Hardware Monitoring**
-- **CPU Temperature**: Real-time temperature via `vcgencmd`
+- **CPU Temperature**: Real-time temperature via `vcgencmd` (reported in both Celsius and Fahrenheit)
 - **Camera Status**: Detection and functionality testing
+- **System Status**: Online/offline tracking
 - **System Uptime**: Service runtime tracking
+- **Timestamp**: Unix timestamp with each report for accurate time tracking
 - **Mock Data**: Works on non-Pi systems for development
 
 ### ✅ **Communication**
-- **gRPC Protocol**: Efficient binary communication
-- **Auto-retry**: Handles connection failures gracefully
-- **Configurable Intervals**: Adjustable reporting frequency
-- **Error Handling**: Continues operation despite hardware failures
+- **HTTP/HTTPS Protocol**: Simple, universal JSON-based communication
+- **Zero Dependencies**: Uses only Node.js built-in modules
+- **Server Health Check**: Verifies server connectivity before starting (with retry logic)
+- **Timeout Handling**: Configurable HTTP request timeouts
+- **Error Handling**: Continues operation despite connection failures
+- **Configurable Intervals**: Adjustable reporting frequency (default: 10s)
+- **Alert Support**: Receives and displays server alerts
+- **Dual Temperature Format**: Sends both Celsius and Fahrenheit for international compatibility
+- **Resilient Design**: Starts even if server is unreachable (will retry on interval)
 
 ### ✅ **Deployment**
 - **Systemd Integration**: Auto-start on boot
 - **Service Management**: Standard Linux service controls
 - **Easy Configuration**: Environment-based setup
-- **Production Ready**: Logging and error handling
+- **Production Ready**: Comprehensive logging and error handling
+- **No Build Step**: Direct Node.js execution
 
 ## 🔧 **File Structure**
 
 ```
 parking-pulse-pi-status-edge-svc/
-├── pi-monitor.js           # Main service (80 lines)
-├── proto/parking.proto     # gRPC definitions (50 lines)
-├── deploy.sh              # Deployment script (45 lines)
-├── package.json           # Dependencies (15 lines)
+├── pi-monitor.js           # Main monitoring service (~185 lines)
+├── config.js              # Configuration module (91 lines)
+├── deploy.sh              # Generic deployment script
+├── deploy-blue-gate.sh    # Blue gate deployment script
+├── deploy-pink-gate.sh    # Pink gate deployment script
+├── package.json           # Package metadata (no external dependencies!)
 └── README.md             # This file
 ```
+
+**Total Code**: ~275 lines of production-ready code with zero external dependencies!
 
 ## 🚨 **Alert Triggers**
 
@@ -307,35 +390,44 @@ The service will trigger alerts on the central server for:
 # Custom deployment for specific Pi
 
 PI_ID="custom-pi"
-SERVER_URL="192.168.1.200:50051"
+SERVER_URL="http://192.168.1.200:3000"
 INTERVAL="60000"  # 1 minute
+HTTP_TIMEOUT="10000"  # 10 seconds
 
-export PI_ID SERVER_URL INTERVAL
+export PI_ID SERVER_URL INTERVAL HTTP_TIMEOUT
 ./deploy.sh $PI_ID $SERVER_URL
 ```
 
 ### Development Mode
 ```bash
 # Run with mock hardware (non-Pi systems)
-MOCK_HARDWARE=true PI_ID=dev-pi SERVER_URL=localhost:50051 node pi-monitor.js
+PI_ID=dev-pi SERVER_URL=http://localhost:3000 node pi-monitor.js
 
-# Debug mode with verbose logging
-DEBUG=true PI_ID=debug-pi SERVER_URL=localhost:50051 node pi-monitor.js
+# Run with custom timeout
+PI_ID=test-pi SERVER_URL=http://localhost:3000 HTTP_TIMEOUT=10000 node pi-monitor.js
+
+# Run with high-frequency reporting for testing
+PI_ID=test-pi SERVER_URL=http://localhost:3000 INTERVAL=5000 node pi-monitor.js
 ```
 
 ## 📈 **Performance**
 
 - **CPU Usage**: < 1% during normal operation
-- **Memory Usage**: ~15-20MB
-- **Network Usage**: ~100 bytes per report (every 30s)
+- **Memory Usage**: ~10-15MB (reduced from gRPC version!)
+- **Network Usage**: ~200-300 bytes per report (JSON, every 10s)
 - **Disk I/O**: Minimal (only for camera tests)
+- **Startup Time**: Instant (no dependency loading)
+- **Reporting Frequency**: Every 10 seconds (configurable via INTERVAL env var)
 
 ## 🔒 **Security**
 
 - **No Root Required**: Runs as regular user (pi)
 - **Local Hardware Only**: Only accesses local sensors
-- **Network Communication**: gRPC over TCP (consider VPN for production)
+- **HTTPS Support**: Use HTTPS URLs for encrypted communication
+- **Network Communication**: Standard HTTP/HTTPS over TCP
 - **No Data Storage**: Stateless operation
+- **Timeout Protection**: Configurable HTTP timeouts prevent hanging
+- **Error Isolation**: Continues operation despite connection failures
 
 ## 🎯 **Next Steps**
 
@@ -346,7 +438,10 @@ DEBUG=true PI_ID=debug-pi SERVER_URL=localhost:50051 node pi-monitor.js
 
 ---
 
-**Status**: ✅ **Production Ready**  
-**Protocol**: gRPC (efficient binary communication)  
-**Deployment**: Systemd service with auto-restart  
-**Monitoring**: Real-time hardware status reporting
+**Status**: ✅ **Production Ready**
+**Version**: 2.2.0 (HTTP Implementation with Dual Temperature Format & Server Health Check)
+**Protocol**: HTTP/HTTPS (simple JSON communication)
+**Dependencies**: Zero external dependencies
+**Deployment**: Systemd service with auto-restart
+**Monitoring**: Real-time hardware status reporting every 10 seconds
+**Reliability**: Server health check on startup with automatic retry logic

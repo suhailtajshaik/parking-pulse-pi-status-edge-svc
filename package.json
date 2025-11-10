@@ -1,16 +1,23 @@
 {
-  "name": "monitoring-service",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "parking-pulse-edge-service",
+  "version": "2.2.0",
+  "description": "Lightweight HTTP-based monitoring service for Raspberry Pi devices that reports system health metrics (temperature in C/F, camera status, uptime) to a central server every 10 seconds with automatic server health checks",
+  "main": "pi-monitor.js",
   "scripts": {
+    "start": "node pi-monitor.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "raspberry-pi",
+    "iot",
+    "monitoring",
+    "edge-computing",
+    "http"
+  ],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@grpc/grpc-js": "^1.9.0",
-    "@grpc/proto-loader": "^0.7.0"
-  }
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {}
 }
