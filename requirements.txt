@@ -1,0 +1,18 @@
+# Python dependencies for vehicle detection service
+
+# Computer vision
+opencv-python>=4.8.0
+
+# Numerical operations
+numpy>=1.24.0
+
+# YOLOv8 (Ultralytics)
+ultralytics>=8.0.0
+
+# Hailo SDK (install separately - not available via pip)
+# Follow: https://hailo.ai/developer-zone/documentation/
+# hailo-platform>=4.16.0
+
+# Optional: For better tracking (uncomment if using SORT)
+# filterpy>=1.4.5
+# scikit-learn>=1.3.0

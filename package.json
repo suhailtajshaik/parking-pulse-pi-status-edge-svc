@@ -1,10 +1,12 @@
 {
   "name": "parking-pulse-edge-service",
-  "version": "2.2.0",
-  "description": "Lightweight HTTP-based monitoring service for Raspberry Pi devices that reports system health metrics (temperature in C/F, camera status, uptime) to a central server every 10 seconds with automatic server health checks",
+  "version": "3.0.0",
+  "description": "Comprehensive IoT edge service for Raspberry Pi with system health monitoring and AI-powered vehicle detection using YOLOv8 + Hailo-8L",
   "main": "pi-monitor.js",
   "scripts": {
     "start": "node pi-monitor.js",
+    "start:vehicle-detector": "python3 vehicle-detector.py",
+    "start:event-processor": "node event-processor.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -12,12 +14,23 @@
     "iot",
     "monitoring",
     "edge-computing",
-    "http"
+    "http",
+    "yolov8",
+    "hailo",
+    "vehicle-detection",
+    "computer-vision",
+    "ai"
   ],
   "author": "",
   "license": "ISC",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=14.0.0",
+    "python": ">=3.11.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "aws-sdk": "^2.1498.0"
+  },
+  "optionalDependencies": {
+    "chokidar": "^3.5.3"
+  }
 }
