@@ -116,7 +116,7 @@ All configuration is done via environment variables. These are set in the system
 | `GATE_LOCATION` | `entrance-1` | Gate location identifier |
 | `DETECTION_LINE_Y` | `540` | Y coordinate of detection line (0-1080) |
 | `MIN_CONFIDENCE` | `0.7` | Minimum detection confidence (0-1) |
-| `FRAME_RATE` | `10` | Frames per second to process |
+| `FRAME_RATE` | `24` | Frames per second to process |
 | `CAMERA_WIDTH` | `1920` | Camera resolution width |
 | `CAMERA_HEIGHT` | `1080` | Camera resolution height |
 | `MODEL_PATH` | `/opt/parking-pulse/models/yolov8m.hef` | Path to YOLOv8 Hailo model |
@@ -438,9 +438,10 @@ FRAME_RATE=5 python3 vehicle-detector.py
 
 ### Optimize Frame Rate
 
-- **Default:** 10 FPS - Good balance
-- **High accuracy:** 15-20 FPS - More detections, higher CPU usage
-- **Battery/power saving:** 5 FPS - Fewer detections, lower power
+- **Default:** 24 FPS - Standard video frame rate for smooth tracking
+- **High accuracy:** 30 FPS - Maximum smoothness, higher CPU usage
+- **Power saving:** 10-15 FPS - Reduced processing, lower power consumption
+- **Battery/minimal:** 5 FPS - Minimal processing, lowest power
 
 ```bash
 # Edit systemd service
@@ -448,7 +449,7 @@ sudo systemctl edit parking-pulse-vehicle-detector
 
 # Add:
 [Service]
-Environment="FRAME_RATE=15"
+Environment="FRAME_RATE=30"
 ```
 
 ### Adjust Confidence Threshold

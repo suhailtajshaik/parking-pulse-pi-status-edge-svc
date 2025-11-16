@@ -381,7 +381,7 @@ S3_PREFIX=vehicle-events
 # Detection Settings
 DETECTION_LINE_Y=400        # Y coordinate of detection line (0-1080)
 MIN_CONFIDENCE=0.7          # Minimum detection confidence (0-1)
-FRAME_RATE=10               # Frames per second to process
+FRAME_RATE=24               # Frames per second to process
 CAMERA_RESOLUTION=1920x1080 # Camera resolution
 
 # Event Processing
@@ -455,7 +455,7 @@ Two services will run independently:
 - **Accuracy**: >90% for vehicle detection in good lighting
 
 ### Processing Pipeline
-- **Frame Processing**: 10 FPS (configurable)
+- **Frame Processing**: 24 FPS (configurable)
 - **Event Latency**: <500ms from detection to queue
 - **S3 Upload Time**: 1-3 seconds per image
 - **Total Event Processing**: 2-5 seconds from detection to server notification

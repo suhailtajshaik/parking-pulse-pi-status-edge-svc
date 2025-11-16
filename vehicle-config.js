@@ -21,7 +21,7 @@ const config = {
   // Detection Settings
   DETECTION_LINE_Y: parseInt(process.env.DETECTION_LINE_Y) || 540,  // Middle of 1080p
   MIN_CONFIDENCE: parseFloat(process.env.MIN_CONFIDENCE) || 0.7,
-  FRAME_RATE: parseInt(process.env.FRAME_RATE) || 10,
+  FRAME_RATE: parseInt(process.env.FRAME_RATE) || 24,
   CAMERA_WIDTH: parseInt(process.env.CAMERA_WIDTH) || 1920,
   CAMERA_HEIGHT: parseInt(process.env.CAMERA_HEIGHT) || 1080,
 
