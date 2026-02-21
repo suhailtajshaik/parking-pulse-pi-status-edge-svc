@@ -21,7 +21,7 @@ const config = {
   SERVER_URL: process.env.SERVER_URL || 'http://192.168.1.112:3000',
   
   // Monitoring Configuration
-  MONITORING_INTERVAL: parseInt(process.env.MONITORING_INTERVAL) || 30000, // 30 seconds
+  MONITORING_INTERVAL: parseInt(process.env.MONITORING_INTERVAL) || 10000, // 10 seconds
   
   // System Commands (Raspberry Pi specific)
   TEMP_COMMAND: '/usr/bin/vcgencmd measure_temp',
@@ -34,19 +34,21 @@ const config = {
   
   // HTTP Configuration
   HTTP_TIMEOUT: 5000, // 5 seconds
-  
+
   // Retry Configuration
   MAX_RETRIES: 3,
   RETRY_DELAY: 2000, // 2 seconds
-  
+
   // Logging Configuration
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
-  
+
   // Alert Thresholds (local monitoring)
   TEMP_WARNING_THRESHOLD: 65, // Celsius
   TEMP_CRITICAL_THRESHOLD: 75, // Celsius
-  
-  // Health Check Configuration
+
+  // Health Check Configuration (startup check before monitoring begins)
+  HEALTH_CHECK_RETRIES: parseInt(process.env.HEALTH_CHECK_RETRIES) || 3,
+  HEALTH_CHECK_DELAY: parseInt(process.env.HEALTH_CHECK_DELAY) || 2000, // 2 seconds
   HEALTH_CHECK_INTERVAL: 60000, // 1 minute
   
   // Pi-specific Configuration
@@ -68,8 +70,9 @@ if (!config.PI_ID || config.PI_ID === 'unknown-pi') {
   console.warn('⚠️  PI_ID not properly configured. Please set PI_ID environment variable or update config.js');
 }
 
-if (!config.SERVER_URL.startsWith('http')) {
+if (!config.SERVER_URL.startsWith('http://') && !config.SERVER_URL.startsWith('https://')) {
   console.error('❌ Invalid SERVER_URL. Must start with http:// or https://');
+  console.error(`   Current value: ${config.SERVER_URL}`);
   process.exit(1);
 }
 

@@ -11,7 +11,7 @@ export PI_COLOR="pink"
 export PI_LOCATION="Pink Gate"
 export PI_DESCRIPTION="Parking monitoring at Pink Gate entrance"
 export SERVER_URL="http://192.168.1.112:3000"
-export MONITORING_INTERVAL="30000"
+export MONITORING_INTERVAL="10000"
 export NODE_ENV="production"
 
 # Create systemd service file
@@ -30,7 +30,7 @@ Environment=PI_ID=pink-gate-pi
 Environment=PI_COLOR=pink
 Environment=PI_LOCATION="Pink Gate"
 Environment=SERVER_URL=http://192.168.1.112:3000
-Environment=MONITORING_INTERVAL=30000
+Environment=MONITORING_INTERVAL=10000
 Environment=NODE_ENV=production
 WorkingDirectory=/home/pi/parking-pulse-edge
 ExecStart=/usr/bin/node pi-monitor.js
